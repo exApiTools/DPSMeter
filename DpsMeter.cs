@@ -172,57 +172,34 @@ namespace DPSMeter
             var startY = position.Y;
             var measury = Graphics.MeasureText($"12345678 {max_aoe_dps}");
             var positionLeft = position.Translate(-measury.X, 0);
-            Vector2 drawText;
 
+            // Collect the rows first so the background can be drawn before the text: images are drawn on the
+            // text layer, so a background drawn afterwards covers the text.
+            var rows = new System.Collections.Generic.List<(string Value, string Label, Color Color)>();
             if (Settings.ShowCurrentHitDamage.Value)
             {
-                if (Settings.ShowAOE.Value)
-                {
-                    drawText = Graphics.DrawText(CurrentDmgAoe.ToString(), positionLeft, Settings.DpsFontColor, FontAlign.Left);
-                    drawText = Graphics.DrawText(aoe_hit, position, Settings.DpsFontColor, FontAlign.Right);
-                    position.Y += drawText.Y;
-                    positionLeft.Y += drawText.Y;
-                }
-
-                drawText = Graphics.DrawText(CurrentDmgSingle.ToString(), positionLeft, Settings.DpsFontColor, FontAlign.Left);
-                drawText = Graphics.DrawText(hit, position, Settings.DpsFontColor, FontAlign.Right);
-                position.Y += drawText.Y;
-                positionLeft.Y += drawText.Y;
+                if (Settings.ShowAOE.Value) rows.Add((CurrentDmgAoe.ToString(), aoe_hit, Settings.DpsFontColor));
+                rows.Add((CurrentDmgSingle.ToString(), hit, Settings.DpsFontColor));
             }
 
-            if (Settings.ShowAOE.Value)
-            {
-                drawText = Graphics.DrawText(CurrentDpsAoe.ToString(), positionLeft, Settings.PeakFontColor, FontAlign.Left);
-                drawText = Graphics.DrawText(aoe_dps, position, Settings.PeakFontColor, FontAlign.Right);
-                position.Y += drawText.Y;
-                positionLeft.Y += drawText.Y;
-            }
+            if (Settings.ShowAOE.Value) rows.Add((CurrentDpsAoe.ToString(), aoe_dps, Settings.PeakFontColor));
+            rows.Add((CurrentDpsSingle.ToString(), dps, Settings.PeakFontColor));
+            if (Settings.ShowAOE.Value) rows.Add((MaxDpsAoe.ToString(), max_aoe_dps, Settings.PeakFontColor));
+            rows.Add((MaxDpsSingle.ToString(), max_dps, Settings.PeakFontColor));
+            rows.Add((TotalLifeAroundMonster.ToString(), hp, Settings.PeakFontColor));
 
-            drawText = Graphics.DrawText(CurrentDpsSingle.ToString(), positionLeft, Settings.PeakFontColor, FontAlign.Left);
-            drawText = Graphics.DrawText(dps, position, Settings.PeakFontColor, FontAlign.Right);
-            position.Y += drawText.Y;
-            positionLeft.Y += drawText.Y;
-
-            if (Settings.ShowAOE.Value)
-            {
-                drawText = Graphics.DrawText(MaxDpsAoe.ToString(), positionLeft, Settings.PeakFontColor, FontAlign.Left);
-                drawText = Graphics.DrawText(max_aoe_dps, position, Settings.PeakFontColor, FontAlign.Right);
-                position.Y += drawText.Y;
-                positionLeft.Y += drawText.Y;
-            }
-
-            drawText = Graphics.DrawText(MaxDpsSingle.ToString(), positionLeft, Settings.PeakFontColor, FontAlign.Left);
-            drawText = Graphics.DrawText(max_dps, position, Settings.PeakFontColor, FontAlign.Right);
-            position.Y += drawText.Y;
-            positionLeft.Y += drawText.Y;
-
-            drawText = Graphics.DrawText(TotalLifeAroundMonster.ToString(), positionLeft, Settings.PeakFontColor, FontAlign.Left);
-            drawText = Graphics.DrawText(hp, position, Settings.PeakFontColor, FontAlign.Right);
-            position.Y += drawText.Y;
-            positionLeft.Y += drawText.Y;
-            var bounds = new RectangleF(positionLeft.X - 50, startY + 3, measury.X + 50, position.Y - startY);
-
+            var lineHeight = Graphics.MeasureText("0Ap").Y;
+            var bounds = new RectangleF(positionLeft.X - 50, startY + 3, measury.X + 50, lineHeight * rows.Count);
             Graphics.DrawImage("preload-new.png", bounds, Settings.BackgroundColor);
+
+            foreach (var (value, label, color) in rows)
+            {
+                Graphics.DrawText(value, positionLeft, color, FontAlign.Left);
+                Graphics.DrawText(label, position, color, FontAlign.Right);
+                position.Y += lineHeight;
+                positionLeft.Y += lineHeight;
+            }
+
             GameController.LeftPanel.StartDrawPoint = position;
         }
     }
